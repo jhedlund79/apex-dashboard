@@ -1,5 +1,4 @@
 # APEX — Aggressive Growth Terminal
-![Go](https://img.shields.io/badge/Go-1-red)
 
 A full-stack market intelligence dashboard for tracking US equities, international indices, crypto, sector analysis, and high-conviction investment recommendations.
 
