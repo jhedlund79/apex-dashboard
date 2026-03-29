@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Allows the badge commit step to push back to the branch.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: backend/go.sum
+
+      - name: Run tests
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./internal/...
+
+      - name: Show coverage summary
+        run: go tool cover -func=coverage.out | tail -1
+
+      # ── Badge update (main branch only) ────────────────────────────────────
+
+      - name: Update coverage badge in README
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: tj-actions/coverage-badge-go@v3
+        with:
+          filename: backend/coverage.out
+          text: Go Coverage
+          green: 85
+          yellow: 60
+
+      - name: Commit updated badge
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ../../README.md
+          git diff --staged --quiet || git commit -m "chore: update coverage badge [skip ci]"
+          git push
