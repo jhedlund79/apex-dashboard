@@ -9,6 +9,8 @@ jobs:
   test:
     name: Backend Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed for badge commit step
     defaults:
       run:
         working-directory: backend
