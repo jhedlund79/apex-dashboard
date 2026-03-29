@@ -137,6 +137,61 @@ Frontend (Vite, prefix with `VITE_`):
 
 ---
 
+## Deployment on GCP Cloud Run
+
+### Prerequisites
+
+- Google Cloud SDK (`gcloud`) installed and authenticated
+- GCP project with Cloud Run API enabled
+- Docker installed locally (for testing)
+
+### 1. Build and Test Locally
+
+```bash
+# Build the Docker image
+docker build -t apex-dashboard .
+
+# Test locally
+docker run -p 8080:8080 -e POLYGON_API_KEY=your-key -e COINGECKO_API_KEY=your-key apex-dashboard
+```
+
+### 2. Deploy to Cloud Run
+
+#### Option A: Manual Deployment
+
+```bash
+# Set your GCP project
+gcloud config set project YOUR_PROJECT_ID
+
+# Build and deploy
+gcloud run deploy apex-dashboard \
+  --source . \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --set-env-vars POLYGON_API_KEY=YOUR_POLYGON_KEY,COINGECKO_API_KEY=YOUR_COINGECKO_KEY \
+  --port 8080
+```
+
+#### Option B: Automated with Cloud Build
+
+1. Enable Cloud Build API in your GCP project
+2. Create a Cloud Build trigger for your repository
+3. Set substitution variables `_POLYGON_API_KEY` and `_COINGECKO_API_KEY` in the trigger
+4. Push to trigger automatic build and deployment
+
+The service will be accessible at the URL provided by Cloud Run.
+
+### Environment Variables for Production
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `POLYGON_API_KEY` | Yes | Polygon.io API key for market data |
+| `COINGECKO_API_KEY` | No | CoinGecko API key for higher rate limits |
+| `APEX_ADDR` | No | Listen address (defaults to `:8080`) |
+
+---
+
 ## Verification
 
 ```bash

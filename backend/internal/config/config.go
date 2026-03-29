@@ -35,6 +35,7 @@ type Config struct {
 // Environment variables:
 //
 //	APEX_ADDR          — listen address (default ":8080")
+//	PORT               — Cloud Run port (takes precedence over APEX_ADDR)
 //	POLYGON_API_KEY    — Polygon.io API key; enables live market data
 //	COINGECKO_API_KEY  — optional CoinGecko API key
 func Load() Config {
@@ -42,7 +43,11 @@ func Load() Config {
 
 	addr := os.Getenv("APEX_ADDR")
 	if addr == "" {
-		addr = ":8080"
+		if port := os.Getenv("PORT"); port != "" {
+			addr = ":" + port
+		} else {
+			addr = ":8080"
+		}
 	}
 	return Config{
 		Addr:         addr,

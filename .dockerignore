@@ -1,0 +1,8 @@
+.git
+.github
+.claude
+README.md
+docs
+node_modules
+.gitignore
+*.md

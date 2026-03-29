@@ -110,8 +110,8 @@ type pgGroupedResp struct {
 }
 
 type pgGroupedBar struct {
-	Sym string  `json:"T"` // ticker symbol (uppercase key)
-	Ts  int64   `json:"t"` // timestamp unix ms — must be declared so the decoder
+	Sym string `json:"T"` // ticker symbol (uppercase key)
+	Ts  int64  `json:"t"` // timestamp unix ms — must be declared so the decoder
 	//                         doesn't case-fold "t" onto the string Sym field
 	C float64 `json:"c"` // close price
 }
@@ -1138,11 +1138,11 @@ func (s *Store) Recommendations() (models.RecommendationsResponse, error) {
 			changePct = (price - prev) / prev * 100
 		}
 		return models.Recommendation{
-			Ticker:  r.ticker,
-			Name:    r.name,
-			Badge:   badge,
-			Type:    recType,
-			Thesis:  r.thesis,
+			Ticker: r.ticker,
+			Name:   r.name,
+			Badge:  badge,
+			Type:   recType,
+			Thesis: r.thesis,
 			Stats: []models.RecStat{
 				{Label: "Price", Value: fmtDollar(price), Dir: ""},
 				{Label: "24h Chg", Value: fmtPct(changePct), Dir: dirStr(changePct)},
@@ -1154,11 +1154,11 @@ func (s *Store) Recommendations() (models.RecommendationsResponse, error) {
 	toCryptoRec := func(r ranked, i int) models.Recommendation {
 		badge, recType := badgeForRank(i, r.badge, r.recType)
 		return models.Recommendation{
-			Ticker:  r.ticker,
-			Name:    r.name,
-			Badge:   badge,
-			Type:    recType,
-			Thesis:  r.thesis,
+			Ticker: r.ticker,
+			Name:   r.name,
+			Badge:  badge,
+			Type:   recType,
+			Thesis: r.thesis,
 			Stats: []models.RecStat{
 				{Label: "Price", Value: fmtDollar(r.price), Dir: ""},
 				{Label: "24h Chg", Value: fmtPct(r.changePct), Dir: dirStr(r.changePct)},
@@ -1213,8 +1213,6 @@ func staticDrivers() []models.MarketDriver {
 	}
 }
 
-
 func staticMarketContext() string {
 	return "Crypto markets remain sensitive to macro risk-off sentiment. Institutional adoption continues via ETF flows. Monitor on-chain activity and exchange reserves as leading indicators of trend reversals."
 }
-

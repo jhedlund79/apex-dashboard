@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -25,6 +26,10 @@ func main() {
 
 	if cfg.PolygonKey == "" {
 		logger.Error("POLYGON_API_KEY is required — set it in .env or the environment")
+		os.Exit(1)
+	}
+	if cfg.CoinGeckoKey == "" {
+		logger.Error("COINGECKO_API_KEY not set — CoinGecko API will be disabled")
 		os.Exit(1)
 	}
 
@@ -52,6 +57,24 @@ func main() {
 	mux.HandleFunc("GET /api/v1/markets", h.HandleMarkets)
 	mux.HandleFunc("GET /api/v1/crypto", h.HandleCrypto)
 	mux.HandleFunc("GET /api/v1/recommendations", h.HandleRecommendations)
+
+	// Serve static files from frontend/dist for SPA
+	distDir := "./frontend/dist"
+	fs := http.FileServer(http.Dir(distDir))
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			http.NotFound(w, r)
+			return
+		}
+		// Check if file exists in dist
+		path := distDir + r.URL.Path
+		if _, err := os.Stat(path); err == nil {
+			fs.ServeHTTP(w, r)
+			return
+		}
+		// Serve index.html for SPA routes
+		http.ServeFile(w, r, distDir+"/index.html")
+	})
 
 	srv, err := server.New(server.Config{
 		Addr:    cfg.Addr,
