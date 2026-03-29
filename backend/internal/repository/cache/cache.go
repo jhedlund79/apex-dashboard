@@ -31,11 +31,13 @@ type Store struct {
 	inner repository.Store
 	ttl   time.Duration
 
-	mu       sync.Mutex
-	overview entry[models.OverviewResponse]
-	markets  entry[models.MarketsResponse]
-	crypto   entry[models.CryptoResponse]
-	recs     entry[models.RecommendationsResponse]
+	mu            sync.Mutex
+	overview      entry[models.OverviewResponse]
+	markets       entry[models.MarketsResponse]
+	crypto        entry[models.CryptoResponse]
+	recs          entry[models.RecommendationsResponse]
+	principal     entry[models.PortfolioResponse]
+	morganStanley entry[models.PortfolioResponse]
 }
 
 // New wraps inner with a cache that expires entries after ttl.
@@ -84,5 +86,27 @@ func (s *Store) Recommendations() (models.RecommendationsResponse, error) {
 	}
 	v, err := s.inner.Recommendations()
 	s.recs = entry[models.RecommendationsResponse]{value: v, err: err, at: time.Now()}
+	return v, err
+}
+
+func (s *Store) Principal() (models.PortfolioResponse, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.principal.fresh(s.ttl) {
+		return s.principal.value, s.principal.err
+	}
+	v, err := s.inner.Principal()
+	s.principal = entry[models.PortfolioResponse]{value: v, err: err, at: time.Now()}
+	return v, err
+}
+
+func (s *Store) MorganStanley() (models.PortfolioResponse, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.morganStanley.fresh(s.ttl) {
+		return s.morganStanley.value, s.morganStanley.err
+	}
+	v, err := s.inner.MorganStanley()
+	s.morganStanley = entry[models.PortfolioResponse]{value: v, err: err, at: time.Now()}
 	return v, err
 }

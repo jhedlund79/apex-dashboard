@@ -10,6 +10,8 @@ const International = lazy(() => import('./pages/International'))
 const Crypto = lazy(() => import('./pages/Crypto'))
 const Recommendations = lazy(() => import('./pages/Recommendations'))
 const Sectors = lazy(() => import('./pages/Sectors'))
+const Principal = lazy(() => import('./pages/Principal'))
+const MorganStanley = lazy(() => import('./pages/MorganStanley'))
 
 const TABS: Record<TabId, React.LazyExoticComponent<() => React.JSX.Element>> = {
   overview: Overview,
@@ -18,6 +20,8 @@ const TABS: Record<TabId, React.LazyExoticComponent<() => React.JSX.Element>> = 
   crypto: Crypto,
   recs: Recommendations,
   sectors: Sectors,
+  principal: Principal,
+  morganstanley: MorganStanley,
 }
 
 const App = () => {

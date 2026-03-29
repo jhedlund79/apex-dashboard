@@ -5,6 +5,7 @@ import type {
   MarketsResponse,
   CryptoResponse,
   RecommendationsResponse,
+  PortfolioResponse,
 } from '../types/market'
 
 interface ApiState<T> {
@@ -44,3 +45,9 @@ export const useCrypto = (): ApiState<CryptoResponse> =>
 
 export const useRecommendations = (): ApiState<RecommendationsResponse> =>
   useApiCall(marketService.recommendations)
+
+export const usePrincipal = (): ApiState<PortfolioResponse> =>
+  useApiCall(marketService.principal)
+
+export const useMorganStanley = (): ApiState<PortfolioResponse> =>
+  useApiCall(marketService.morganStanley)

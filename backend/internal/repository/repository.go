@@ -34,4 +34,10 @@ type Store interface {
 
 	// Recommendations returns curated growth picks grouped by theme.
 	Recommendations() (models.RecommendationsResponse, error)
+
+	// Principal returns portfolio data for the Principal.com retirement account.
+	Principal() (models.PortfolioResponse, error)
+
+	// MorganStanley returns portfolio data for the Morgan Stanley investment account.
+	MorganStanley() (models.PortfolioResponse, error)
 }

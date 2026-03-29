@@ -160,3 +160,58 @@ type RecommendationsResponse struct {
 	Defense    []Recommendation `json:"defense"`
 	Crypto     []Recommendation `json:"crypto"`
 }
+
+// ChangeMetric holds a formatted dollar amount and percentage change with
+// a direction indicator ("up", "down", "flat").
+type ChangeMetric struct {
+	Amount string `json:"amount"`
+	Pct    string `json:"pct"`
+	Dir    string `json:"dir"`
+}
+
+// PortfolioSummary holds top-line metrics for a portfolio account.
+type PortfolioSummary struct {
+	AccountName   string       `json:"accountName"`
+	AccountType   string       `json:"accountType"`
+	Provider      string       `json:"provider"`
+	CurrentValue  string       `json:"currentValue"`
+	TotalCost     string       `json:"totalCost"`
+	TotalGain     string       `json:"totalGain"`
+	TotalGainPct  string       `json:"totalGainPct"`
+	TotalGainDir  string       `json:"totalGainDir"`
+	WeeklyChange  ChangeMetric `json:"weeklyChange"`
+	MonthlyChange ChangeMetric `json:"monthlyChange"`
+	YTDChange     ChangeMetric `json:"ytdChange"`
+}
+
+// PortfolioHolding represents a single position within a portfolio.
+type PortfolioHolding struct {
+	Ticker     string `json:"ticker"`
+	Name       string `json:"name"`
+	Value      string `json:"value"`
+	Allocation string `json:"allocation"`
+	Gain       string `json:"gain"`
+	GainDir    string `json:"gainDir"`
+}
+
+// Contribution records a single contribution or deposit event.
+type Contribution struct {
+	Date   string `json:"date"`
+	Amount string `json:"amount"`
+	Type   string `json:"type"` // "employee", "employer", "rollover", "deposit"
+	Note   string `json:"note"`
+}
+
+// PortfolioResponse is the payload for a personal portfolio endpoint.
+// Connected is false when the Plaid account has not yet been linked;
+// in that case all other fields are zero values.
+// PerformanceData is monthly account balance history.
+// ContribData is monthly contribution totals for the bar chart.
+type PortfolioResponse struct {
+	Connected       bool               `json:"connected"`
+	Summary         PortfolioSummary   `json:"summary"`
+	PerformanceData ChartData          `json:"performanceData"`
+	ContribData     ChartData          `json:"contribData"`
+	Holdings        []PortfolioHolding `json:"holdings"`
+	Contributions   []Contribution     `json:"contributions"`
+}

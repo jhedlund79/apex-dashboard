@@ -21,6 +21,13 @@ type Config struct {
 	// CoinGeckoKey is an optional CoinGecko API key.
 	// The public API works without one but is subject to stricter rate limits.
 	CoinGeckoKey string
+
+	// Plaid credentials. All three must be set to enable Plaid integration.
+	PlaidClientID string
+	PlaidSecret   string
+	// PlaidEnv controls which Plaid environment to use: "sandbox", "development",
+	// or "production". Defaults to "sandbox" when unset.
+	PlaidEnv string
 }
 
 // Load reads configuration from environment variables and returns a
@@ -49,10 +56,17 @@ func Load() Config {
 			addr = ":8080"
 		}
 	}
+	plaidEnv := os.Getenv("PLAID_ENV")
+	if plaidEnv == "" {
+		plaidEnv = "sandbox"
+	}
 	return Config{
-		Addr:         addr,
-		PolygonKey:   os.Getenv("POLYGON_API_KEY"),
-		CoinGeckoKey: os.Getenv("COINGECKO_API_KEY"),
+		Addr:          addr,
+		PolygonKey:    os.Getenv("POLYGON_API_KEY"),
+		CoinGeckoKey:  os.Getenv("COINGECKO_API_KEY"),
+		PlaidClientID: os.Getenv("PLAID_CLIENT_ID"),
+		PlaidSecret:   os.Getenv("PLAID_SECRET"),
+		PlaidEnv:      plaidEnv,
 	}
 }
 

@@ -135,3 +135,54 @@ export interface RecommendationsResponse {
   defense: Recommendation[]
   crypto: Recommendation[]
 }
+
+export interface ChangeMetric {
+  amount: string
+  pct: string
+  dir: 'up' | 'down' | 'flat'
+}
+
+export interface PortfolioSummary {
+  accountName: string
+  accountType: string
+  provider: string
+  currentValue: string
+  totalCost: string
+  totalGain: string
+  totalGainPct: string
+  totalGainDir: 'up' | 'down' | 'flat'
+  weeklyChange: ChangeMetric
+  monthlyChange: ChangeMetric
+  ytdChange: ChangeMetric
+}
+
+export interface PortfolioHolding {
+  ticker: string
+  name: string
+  value: string
+  allocation: string
+  gain: string
+  gainDir: 'up' | 'down' | 'flat'
+}
+
+export interface Contribution {
+  date: string
+  amount: string
+  type: 'employee' | 'employer' | 'rollover' | 'deposit'
+  note: string
+}
+
+export interface PortfolioResponse {
+  connected: boolean
+  summary: PortfolioSummary
+  performanceData: ChartData
+  contribData: ChartData
+  holdings: PortfolioHolding[]
+  contributions: Contribution[]
+}
+
+export interface PlaidStatus {
+  enabled: boolean
+  principal: boolean
+  morganstanley: boolean
+}

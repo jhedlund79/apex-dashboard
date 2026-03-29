@@ -14,6 +14,7 @@ import (
 	"apex-dashboard/backend/internal/handlers"
 	"apex-dashboard/backend/internal/repository/cache"
 	"apex-dashboard/backend/internal/repository/live"
+	plaidrepo "apex-dashboard/backend/internal/repository/plaid"
 	"apex-dashboard/backend/internal/server"
 )
 
@@ -40,13 +41,34 @@ func main() {
 	}
 
 	// Cache results for 60 seconds to respect free-tier API rate limits.
-	store := cache.New(liveStore, 60*time.Second)
+	cachedStore := cache.New(liveStore, 60*time.Second)
 	logger.Info("live market data enabled", "cache_ttl", "60s")
 
-	h, err := handlers.New(handlers.Config{
-		Store:  store,
+	handlerCfg := handlers.Config{
+		Store:  cachedStore,
 		Logger: logger,
-	})
+	}
+
+	if cfg.PlaidClientID != "" && cfg.PlaidSecret != "" {
+		ps, err := plaidrepo.New(plaidrepo.Config{
+			Inner:     cachedStore,
+			ClientID:  cfg.PlaidClientID,
+			Secret:    cfg.PlaidSecret,
+			Env:       cfg.PlaidEnv,
+			TokenFile: "./plaid-tokens.json",
+		})
+		if err != nil {
+			logger.Error("failed to create Plaid store", "err", err)
+			os.Exit(1)
+		}
+		handlerCfg.Store = ps
+		handlerCfg.Plaid = ps
+		logger.Info("Plaid integration enabled", "env", cfg.PlaidEnv)
+	} else {
+		logger.Info("Plaid not configured — portfolio pages will use seed data")
+	}
+
+	h, err := handlers.New(handlerCfg)
 	if err != nil {
 		logger.Error("failed to create handlers", "err", err)
 		os.Exit(1)
@@ -57,6 +79,11 @@ func main() {
 	mux.HandleFunc("GET /api/v1/markets", h.HandleMarkets)
 	mux.HandleFunc("GET /api/v1/crypto", h.HandleCrypto)
 	mux.HandleFunc("GET /api/v1/recommendations", h.HandleRecommendations)
+	mux.HandleFunc("GET /api/v1/portfolio/principal", h.HandlePrincipal)
+	mux.HandleFunc("GET /api/v1/portfolio/morgan-stanley", h.HandleMorganStanley)
+	mux.HandleFunc("GET /api/v1/plaid/status", h.HandlePlaidStatus)
+	mux.HandleFunc("POST /api/v1/plaid/link-token", h.HandlePlaidLinkToken)
+	mux.HandleFunc("POST /api/v1/plaid/exchange", h.HandlePlaidExchange)
 
 	// Serve static files from frontend/dist for SPA
 	distDir := "./frontend/dist"

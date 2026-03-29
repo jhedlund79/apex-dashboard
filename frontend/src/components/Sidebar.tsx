@@ -7,6 +7,8 @@ const navItems = [
   { id: 'crypto', icon: '⬡', label: 'Crypto', section: 'Markets' },
   { id: 'recs', icon: '⚡', label: 'Recommendations', section: 'Strategy' },
   { id: 'sectors', icon: '◧', label: 'Sector Analysis', section: 'Strategy' },
+  { id: 'principal', icon: '◎', label: 'Principal 401(k)', section: 'Portfolio' },
+  { id: 'morganstanley', icon: '◈', label: 'Morgan Stanley', section: 'Portfolio' },
 ] as const
 
 export type TabId = (typeof navItems)[number]['id']
@@ -23,6 +25,7 @@ const statColor = (dir: QuickStat['changeDir']) =>
 export const Sidebar = ({ activeTab, onTabChange, quickStats }: SidebarProps) => {
   const markets = navItems.filter(n => n.section === 'Markets')
   const strategy = navItems.filter(n => n.section === 'Strategy')
+  const portfolio = navItems.filter(n => n.section === 'Portfolio')
 
   return (
     <nav className="bg-surface border-r border-white/[0.04] py-6 overflow-y-auto">
@@ -34,6 +37,12 @@ export const Sidebar = ({ activeTab, onTabChange, quickStats }: SidebarProps) =>
 
       <NavSection title="Strategy">
         {strategy.map(item => (
+          <NavItem key={item.id} item={item} active={activeTab === item.id} onClick={() => onTabChange(item.id)} />
+        ))}
+      </NavSection>
+
+      <NavSection title="Portfolio">
+        {portfolio.map(item => (
           <NavItem key={item.id} item={item} active={activeTab === item.id} onClick={() => onTabChange(item.id)} />
         ))}
       </NavSection>

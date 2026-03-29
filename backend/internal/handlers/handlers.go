@@ -8,6 +8,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -17,6 +18,13 @@ import (
 	"apex-dashboard/backend/internal/repository"
 )
 
+// PlaidManager is the subset of the Plaid store used by the handler layer.
+type PlaidManager interface {
+	CreateLinkToken(ctx context.Context, slot string) (string, error)
+	ExchangeToken(ctx context.Context, slot, publicToken string) error
+	ConnectedSlots() []string
+}
+
 // ErrInvalidConfig is returned by [New] when required Config fields are missing.
 var ErrInvalidConfig = errors.New("handlers: invalid config")
 
@@ -24,6 +32,9 @@ var ErrInvalidConfig = errors.New("handlers: invalid config")
 type Config struct {
 	// Required: market data provider.
 	Store repository.Store
+
+	// Optional: enables /api/v1/plaid/* routes when set.
+	Plaid PlaidManager
 
 	// Optional: nil disables request logging.
 	Logger *slog.Logger
@@ -33,6 +44,7 @@ type Config struct {
 // It is safe for concurrent use after construction.
 type Handler struct {
 	store  repository.Store
+	plaid  PlaidManager // may be nil if Plaid is not configured
 	logger *slog.Logger
 }
 
@@ -47,6 +59,7 @@ func New(cfg Config) (*Handler, error) {
 	}
 	return &Handler{
 		store:  cfg.Store,
+		plaid:  cfg.Plaid,
 		logger: cfg.Logger,
 	}, nil
 }
