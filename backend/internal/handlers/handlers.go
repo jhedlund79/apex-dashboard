@@ -15,6 +15,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"apex-dashboard/backend/internal/models"
 	"apex-dashboard/backend/internal/repository"
 )
 
@@ -23,6 +24,19 @@ type PlaidManager interface {
 	CreateLinkToken(ctx context.Context, slot string) (string, error)
 	ExchangeToken(ctx context.Context, slot, publicToken string) error
 	ConnectedSlots() []string
+}
+
+// Quoter provides live price data for simulation trades.
+type Quoter interface {
+	FetchQuote(ticker string) (models.QuoteResponse, error)
+}
+
+// SimulationManager manages the persistent simulation portfolio.
+type SimulationManager interface {
+	Summary() (models.SimulationAccount, error)
+	Trade(action, ticker string, shares, price float64) error
+	AddSnapshot(totalValue float64) error
+	Reset() error
 }
 
 // ErrInvalidConfig is returned by [New] when required Config fields are missing.
@@ -38,6 +52,12 @@ type Config struct {
 
 	// Optional: nil disables request logging.
 	Logger *slog.Logger
+
+	// Optional: enables /api/v1/simulation/* routes when set.
+	Simulation SimulationManager
+
+	// Optional: provides live quotes for simulation trades.
+	Quoter Quoter
 }
 
 // Handler holds shared dependencies for all route handlers.
@@ -46,6 +66,8 @@ type Handler struct {
 	store  repository.Store
 	plaid  PlaidManager // may be nil if Plaid is not configured
 	logger *slog.Logger
+	sim    SimulationManager // may be nil if simulation is not configured
+	quoter Quoter            // may be nil if live data is not available
 }
 
 // New validates cfg and returns a *Handler ready to register routes.
@@ -61,6 +83,8 @@ func New(cfg Config) (*Handler, error) {
 		store:  cfg.Store,
 		plaid:  cfg.Plaid,
 		logger: cfg.Logger,
+		sim:    cfg.Simulation,
+		quoter: cfg.Quoter,
 	}, nil
 }
 

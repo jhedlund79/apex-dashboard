@@ -107,4 +107,37 @@ describe('marketService', () => {
     mockError(400)
     await expect(marketService.plaidLinkToken('principal')).rejects.toThrow('API error 400')
   })
+
+  it('simulation fetches /api/v1/simulation', async () => {
+    mockOk({ cashBalance: 100_000, totalValue: 100_000 })
+    await marketService.simulation()
+    expect(mockFetch).toHaveBeenCalledWith('/api/v1/simulation')
+  })
+
+  it('simulationQuote fetches /api/v1/simulation/quote with ticker', async () => {
+    mockOk({ ticker: 'NVDA', price: 135 })
+    const result = await marketService.simulationQuote('NVDA')
+    expect(result.price).toBe(135)
+    expect(mockFetch).toHaveBeenCalledWith('/api/v1/simulation/quote?ticker=NVDA')
+  })
+
+  it('simulationTrade POSTs to /api/v1/simulation/trade', async () => {
+    mockOk({ success: true, price: 135, total: 1350 })
+    const result = await marketService.simulationTrade('NVDA', 'buy', 10)
+    expect(result.success).toBe(true)
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/v1/simulation/trade',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ ticker: 'NVDA', action: 'buy', shares: 10 }) }),
+    )
+  })
+
+  it('simulationReset POSTs to /api/v1/simulation/reset', async () => {
+    mockOk({ success: true })
+    const result = await marketService.simulationReset()
+    expect(result.success).toBe(true)
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/v1/simulation/reset',
+      expect.objectContaining({ method: 'POST' }),
+    )
+  })
 })

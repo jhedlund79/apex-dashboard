@@ -28,6 +28,10 @@ type Config struct {
 	// PlaidEnv controls which Plaid environment to use: "sandbox", "development",
 	// or "production". Defaults to "sandbox" when unset.
 	PlaidEnv string
+
+	// SimulationDataFile is the path to the JSON file used to persist the
+	// investment simulation portfolio. Defaults to "./simulation-data.json".
+	SimulationDataFile string
 }
 
 // Load reads configuration from environment variables and returns a
@@ -60,13 +64,18 @@ func Load() Config {
 	if plaidEnv == "" {
 		plaidEnv = "sandbox"
 	}
+	simFile := os.Getenv("SIMULATION_DATA_FILE")
+	if simFile == "" {
+		simFile = "./simulation-data.json"
+	}
 	return Config{
-		Addr:          addr,
-		PolygonKey:    os.Getenv("POLYGON_API_KEY"),
-		CoinGeckoKey:  os.Getenv("COINGECKO_API_KEY"),
-		PlaidClientID: os.Getenv("PLAID_CLIENT_ID"),
-		PlaidSecret:   os.Getenv("PLAID_SECRET"),
-		PlaidEnv:      plaidEnv,
+		Addr:               addr,
+		PolygonKey:         os.Getenv("POLYGON_API_KEY"),
+		CoinGeckoKey:       os.Getenv("COINGECKO_API_KEY"),
+		PlaidClientID:      os.Getenv("PLAID_CLIENT_ID"),
+		PlaidSecret:        os.Getenv("PLAID_SECRET"),
+		PlaidEnv:           plaidEnv,
+		SimulationDataFile: simFile,
 	}
 }
 

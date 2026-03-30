@@ -6,6 +6,7 @@ import type {
   PortfolioResponse,
   PlaidStatus,
 } from '../types/market'
+import type { SimulationSummary, QuoteResponse, TradeResponse } from '../types/simulation'
 
 async function apiFetch<T>(path: string): Promise<T> {
   const res = await fetch(`/api/v1${path}`)
@@ -40,4 +41,12 @@ export const marketService = {
     apiPost('/plaid/link-token', { slot }),
   plaidExchange: (slot: string, publicToken: string): Promise<{ success: boolean }> =>
     apiPost('/plaid/exchange', { slot, publicToken }),
+
+  simulation: (): Promise<SimulationSummary> => apiFetch('/simulation'),
+  simulationQuote: (ticker: string): Promise<QuoteResponse> =>
+    apiFetch(`/simulation/quote?ticker=${encodeURIComponent(ticker)}`),
+  simulationTrade: (ticker: string, action: 'buy' | 'sell', shares: number): Promise<TradeResponse> =>
+    apiPost('/simulation/trade', { ticker, action, shares }),
+  simulationReset: (): Promise<{ success: boolean }> =>
+    apiPost('/simulation/reset', {}),
 }

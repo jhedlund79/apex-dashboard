@@ -11,6 +11,7 @@ const navItems = [
   { id: 'morganstanley', icon: '◈', label: 'Morgan Stanley', section: 'Portfolio' },
   { id: 'fidelity', icon: '◆', label: 'Fidelity', section: 'Portfolio' },
   { id: 'sofi', icon: '◇', label: 'SoFi Invest', section: 'Portfolio' },
+  { id: 'simulation', icon: '◉', label: 'Simulator', section: 'Tools' },
 ] as const
 
 export type TabId = (typeof navItems)[number]['id']
@@ -28,6 +29,7 @@ export const Sidebar = ({ activeTab, onTabChange, quickStats }: SidebarProps) =>
   const markets = navItems.filter(n => n.section === 'Markets')
   const strategy = navItems.filter(n => n.section === 'Strategy')
   const portfolio = navItems.filter(n => n.section === 'Portfolio')
+  const tools = navItems.filter(n => n.section === 'Tools')
 
   return (
     <nav className="bg-surface border-r border-white/[0.04] py-6 overflow-y-auto">
@@ -45,6 +47,12 @@ export const Sidebar = ({ activeTab, onTabChange, quickStats }: SidebarProps) =>
 
       <NavSection title="Portfolio">
         {portfolio.map(item => (
+          <NavItem key={item.id} item={item} active={activeTab === item.id} onClick={() => onTabChange(item.id)} />
+        ))}
+      </NavSection>
+
+      <NavSection title="Tools">
+        {tools.map(item => (
           <NavItem key={item.id} item={item} active={activeTab === item.id} onClick={() => onTabChange(item.id)} />
         ))}
       </NavSection>

@@ -14,25 +14,31 @@ import (
 type countingStore struct {
 	mu sync.Mutex
 
-	overviewCalls       int
-	marketsCalls        int
-	cryptoCalls         int
-	recsCalls           int
-	principalCalls      int
-	morganStanleyCalls  int
+	overviewCalls      int
+	marketsCalls       int
+	cryptoCalls        int
+	recsCalls          int
+	principalCalls     int
+	morganStanleyCalls int
+	fidelityCalls      int
+	sofiCalls          int
 
-	overviewResp       models.OverviewResponse
-	overviewErr        error
-	marketsResp        models.MarketsResponse
-	marketsErr         error
-	cryptoResp         models.CryptoResponse
-	cryptoErr          error
-	recsResp           models.RecommendationsResponse
-	recsErr            error
-	principalResp      models.PortfolioResponse
-	principalErr       error
-	morganStanleyResp  models.PortfolioResponse
-	morganStanleyErr   error
+	overviewResp      models.OverviewResponse
+	overviewErr       error
+	marketsResp       models.MarketsResponse
+	marketsErr        error
+	cryptoResp        models.CryptoResponse
+	cryptoErr         error
+	recsResp          models.RecommendationsResponse
+	recsErr           error
+	principalResp     models.PortfolioResponse
+	principalErr      error
+	morganStanleyResp models.PortfolioResponse
+	morganStanleyErr  error
+	fidelityResp      models.PortfolioResponse
+	fidelityErr       error
+	sofiResp          models.PortfolioResponse
+	sofiErr           error
 }
 
 func (s *countingStore) Overview() (models.OverviewResponse, error) {
@@ -72,10 +78,16 @@ func (s *countingStore) MorganStanley() (models.PortfolioResponse, error) {
 	return s.morganStanleyResp, s.morganStanleyErr
 }
 func (s *countingStore) Fidelity() (models.PortfolioResponse, error) {
-	return models.PortfolioResponse{}, nil
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.fidelityCalls++
+	return s.fidelityResp, s.fidelityErr
 }
 func (s *countingStore) SoFi() (models.PortfolioResponse, error) {
-	return models.PortfolioResponse{}, nil
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.sofiCalls++
+	return s.sofiResp, s.sofiErr
 }
 
 func TestNew_ReturnsStore(t *testing.T) {
@@ -243,4 +255,110 @@ func TestCache_ConcurrentCallsSafe(t *testing.T) {
 	}
 	wg.Wait()
 	// No assertion needed — we're checking for races (run with -race).
+}
+
+func TestCache_FidelityAndSoFi(t *testing.T) {
+	inner := &countingStore{
+		fidelityResp: models.PortfolioResponse{Connected: true, Summary: models.PortfolioSummary{CurrentValue: "$43k"}},
+		sofiResp:     models.PortfolioResponse{Connected: true, Summary: models.PortfolioSummary{CurrentValue: "$8k"}},
+	}
+	s := New(inner, time.Minute)
+
+	if r, _ := s.Fidelity(); r.Summary.CurrentValue != "$43k" {
+		t.Errorf("Fidelity: CurrentValue = %q, want $43k", r.Summary.CurrentValue)
+	}
+	if r, _ := s.SoFi(); r.Summary.CurrentValue != "$8k" {
+		t.Errorf("SoFi: CurrentValue = %q, want $8k", r.Summary.CurrentValue)
+	}
+
+	// Second call should hit cache.
+	s.Fidelity() //nolint
+	s.SoFi()     //nolint
+
+	inner.mu.Lock()
+	defer inner.mu.Unlock()
+	if inner.fidelityCalls != 1 {
+		t.Errorf("Fidelity inner called %d times, want 1", inner.fidelityCalls)
+	}
+	if inner.sofiCalls != 1 {
+		t.Errorf("SoFi inner called %d times, want 1", inner.sofiCalls)
+	}
+}
+
+func TestCache_FidelityAndSoFiIncludedInMethodsAreCachedIndependently(t *testing.T) {
+	inner := &countingStore{}
+	s := New(inner, time.Minute)
+
+	s.Fidelity() //nolint
+	s.SoFi()     //nolint
+	s.Fidelity() //nolint
+	s.SoFi()     //nolint
+
+	inner.mu.Lock()
+	defer inner.mu.Unlock()
+	if inner.fidelityCalls != 1 {
+		t.Errorf("Fidelity called %d times, want 1", inner.fidelityCalls)
+	}
+	if inner.sofiCalls != 1 {
+		t.Errorf("SoFi called %d times, want 1", inner.sofiCalls)
+	}
+}
+
+func TestCache_FidelityCachesError(t *testing.T) {
+	inner := &countingStore{fidelityErr: errors.New("fidelity down")}
+	s := New(inner, time.Minute)
+
+	_, err1 := s.Fidelity()
+	_, err2 := s.Fidelity()
+	if err1 == nil || err2 == nil {
+		t.Fatal("expected errors from both calls")
+	}
+	inner.mu.Lock()
+	defer inner.mu.Unlock()
+	if inner.fidelityCalls != 1 {
+		t.Errorf("inner called %d times, want 1 (error should be cached)", inner.fidelityCalls)
+	}
+}
+
+func TestCache_AllMethodsIncludingFidelitySoFi(t *testing.T) {
+	inner := &countingStore{
+		marketsResp:       models.MarketsResponse{USSummary: models.USSummary{MarchReturn: "+5%"}},
+		cryptoResp:        models.CryptoResponse{MarketContext: "bullish"},
+		recsResp:          models.RecommendationsResponse{AISemis: []models.Recommendation{{Ticker: "NVDA"}}},
+		principalResp:     models.PortfolioResponse{Connected: true, Summary: models.PortfolioSummary{CurrentValue: "$100k"}},
+		morganStanleyResp: models.PortfolioResponse{Connected: true, Summary: models.PortfolioSummary{CurrentValue: "$50k"}},
+		fidelityResp:      models.PortfolioResponse{Connected: true, Summary: models.PortfolioSummary{CurrentValue: "$43k"}},
+		sofiResp:          models.PortfolioResponse{Connected: false},
+	}
+	s := New(inner, time.Minute)
+
+	// Call each twice; only first should hit inner.
+	for i := 0; i < 2; i++ {
+		s.Markets()       //nolint
+		s.Crypto()        //nolint
+		s.Recommendations() //nolint
+		s.Principal()     //nolint
+		s.MorganStanley() //nolint
+		s.Fidelity()      //nolint
+		s.SoFi()          //nolint
+	}
+
+	inner.mu.Lock()
+	defer inner.mu.Unlock()
+	for _, c := range []struct {
+		name  string
+		calls int
+	}{
+		{"Markets", inner.marketsCalls},
+		{"Crypto", inner.cryptoCalls},
+		{"Recommendations", inner.recsCalls},
+		{"Principal", inner.principalCalls},
+		{"MorganStanley", inner.morganStanleyCalls},
+		{"Fidelity", inner.fidelityCalls},
+		{"SoFi", inner.sofiCalls},
+	} {
+		if c.calls != 1 {
+			t.Errorf("%s: inner called %d times, want 1", c.name, c.calls)
+		}
+	}
 }

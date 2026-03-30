@@ -11,6 +11,7 @@ describe('Sidebar', () => {
     expect(screen.getByText('Markets')).toBeInTheDocument()
     expect(screen.getByText('Strategy')).toBeInTheDocument()
     expect(screen.getByText('Portfolio')).toBeInTheDocument()
+    expect(screen.getByText('Tools')).toBeInTheDocument()
   })
 
   it('renders all nav items', () => {
@@ -25,6 +26,7 @@ describe('Sidebar', () => {
     expect(screen.getByText('Morgan Stanley')).toBeInTheDocument()
     expect(screen.getByText('Fidelity')).toBeInTheDocument()
     expect(screen.getByText('SoFi Invest')).toBeInTheDocument()
+    expect(screen.getByText('Simulator')).toBeInTheDocument()
   })
 
   it('calls onTabChange when nav item is clicked', () => {
@@ -58,6 +60,7 @@ describe('Sidebar', () => {
     ['morganstanley', 'Morgan Stanley'],
     ['fidelity', 'Fidelity'],
     ['sofi', 'SoFi Invest'],
+    ['simulation', 'Simulator'],
   ])('onTabChange called with %s when %s is clicked', (tabId, label) => {
     const onChange = vi.fn()
     render(<Sidebar activeTab="overview" onTabChange={onChange} />)

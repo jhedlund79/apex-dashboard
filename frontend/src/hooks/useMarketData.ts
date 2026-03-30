@@ -7,6 +7,7 @@ import type {
   RecommendationsResponse,
   PortfolioResponse,
 } from '../types/market'
+import type { SimulationSummary } from '../types/simulation'
 
 interface ApiState<T> {
   data: T | null
@@ -57,3 +58,6 @@ export const useFidelity = (): ApiState<PortfolioResponse> =>
 
 export const useSoFi = (): ApiState<PortfolioResponse> =>
   useApiCall(marketService.soFi)
+
+export const useSimulation = (): ApiState<SimulationSummary> =>
+  useApiCall(marketService.simulation)

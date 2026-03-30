@@ -156,6 +156,93 @@ func TestMorganStanley_NotConnected(t *testing.T) {
 	}
 }
 
+func TestFidelity_NotConnected(t *testing.T) {
+	dir := t.TempDir()
+	s, _ := New(Config{
+		Inner:     &mockInner{},
+		ClientID:  "id",
+		Secret:    "sec",
+		Env:       "sandbox",
+		TokenFile: filepath.Join(dir, "tokens.json"),
+	})
+
+	resp, err := s.Fidelity()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.Connected {
+		t.Error("expected Connected = false when no token")
+	}
+}
+
+func TestSoFi_NotConnected(t *testing.T) {
+	dir := t.TempDir()
+	s, _ := New(Config{
+		Inner:     &mockInner{},
+		ClientID:  "id",
+		Secret:    "sec",
+		Env:       "sandbox",
+		TokenFile: filepath.Join(dir, "tokens.json"),
+	})
+
+	resp, err := s.SoFi()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.Connected {
+		t.Error("expected Connected = false when no token")
+	}
+}
+
+func TestPortfolioForSlot_AllSlotsNotConnected(t *testing.T) {
+	dir := t.TempDir()
+	s, _ := New(Config{
+		Inner:     &mockInner{},
+		ClientID:  "id",
+		Secret:    "sec",
+		Env:       "sandbox",
+		TokenFile: filepath.Join(dir, "tokens.json"),
+	})
+
+	slots := []struct {
+		name string
+		fn   func() (interface{ GetConnected() bool }, error)
+	}{
+		{"principal", func() (interface{ GetConnected() bool }, error) {
+			r, e := s.Principal()
+			return &portfolioConnectedWrapper{r.Connected}, e
+		}},
+		{"morganstanley", func() (interface{ GetConnected() bool }, error) {
+			r, e := s.MorganStanley()
+			return &portfolioConnectedWrapper{r.Connected}, e
+		}},
+		{"fidelity", func() (interface{ GetConnected() bool }, error) {
+			r, e := s.Fidelity()
+			return &portfolioConnectedWrapper{r.Connected}, e
+		}},
+		{"sofi", func() (interface{ GetConnected() bool }, error) {
+			r, e := s.SoFi()
+			return &portfolioConnectedWrapper{r.Connected}, e
+		}},
+	}
+
+	for _, tc := range slots {
+		t.Run(tc.name, func(t *testing.T) {
+			r, err := tc.fn()
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if r.GetConnected() {
+				t.Errorf("%s: expected Connected = false with no token", tc.name)
+			}
+		})
+	}
+}
+
+type portfolioConnectedWrapper struct{ connected bool }
+
+func (w *portfolioConnectedWrapper) GetConnected() bool { return w.connected }
+
 // ── ConnectedSlots ───────────────────────────────────────────────────────────
 
 func TestConnectedSlots_Empty(t *testing.T) {

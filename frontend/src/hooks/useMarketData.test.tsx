@@ -9,6 +9,7 @@ import {
   useMorganStanley,
   useFidelity,
   useSoFi,
+  useSimulation,
 } from './useMarketData'
 import { marketService } from '../services/market'
 
@@ -22,6 +23,7 @@ vi.mock('../services/market', () => ({
     morganStanley: vi.fn(),
     fidelity: vi.fn(),
     soFi: vi.fn(),
+    simulation: vi.fn(),
   },
 }))
 
@@ -34,6 +36,7 @@ const mocked = marketService as unknown as {
   morganStanley: ReturnType<typeof vi.fn>
   fidelity: ReturnType<typeof vi.fn>
   soFi: ReturnType<typeof vi.fn>
+  simulation: ReturnType<typeof vi.fn>
 }
 
 beforeEach(() => vi.clearAllMocks())
@@ -133,5 +136,15 @@ describe('useSoFi', () => {
     const { result } = renderHook(() => useSoFi())
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(result.current.data?.connected).toBe(false)
+  })
+})
+
+describe('useSimulation', () => {
+  it('fetches simulation summary', async () => {
+    const data = { cashBalance: 100_000, startingCash: 100_000, totalValue: 100_000, positions: [] }
+    mocked.simulation.mockResolvedValueOnce(data)
+    const { result } = renderHook(() => useSimulation())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.data?.cashBalance).toBe(100_000)
   })
 })

@@ -15,6 +15,7 @@ import (
 	"apex-dashboard/backend/internal/repository/cache"
 	"apex-dashboard/backend/internal/repository/live"
 	plaidrepo "apex-dashboard/backend/internal/repository/plaid"
+	simrepo "apex-dashboard/backend/internal/repository/simulation"
 	"apex-dashboard/backend/internal/server"
 )
 
@@ -44,9 +45,18 @@ func main() {
 	cachedStore := cache.New(liveStore, 60*time.Second)
 	logger.Info("live market data enabled", "cache_ttl", "60s")
 
+	simStore, err := simrepo.New(cfg.SimulationDataFile)
+	if err != nil {
+		logger.Error("failed to create simulation store", "err", err)
+		os.Exit(1)
+	}
+	logger.Info("simulation store ready", "file", cfg.SimulationDataFile)
+
 	handlerCfg := handlers.Config{
-		Store:  cachedStore,
-		Logger: logger,
+		Store:      cachedStore,
+		Logger:     logger,
+		Simulation: simStore,
+		Quoter:     liveStore,
 	}
 
 	if cfg.PlaidClientID != "" && cfg.PlaidSecret != "" {
@@ -86,6 +96,10 @@ func main() {
 	mux.HandleFunc("GET /api/v1/plaid/status", h.HandlePlaidStatus)
 	mux.HandleFunc("POST /api/v1/plaid/link-token", h.HandlePlaidLinkToken)
 	mux.HandleFunc("POST /api/v1/plaid/exchange", h.HandlePlaidExchange)
+	mux.HandleFunc("GET /api/v1/simulation", h.HandleSimulation)
+	mux.HandleFunc("GET /api/v1/simulation/quote", h.HandleSimulationQuote)
+	mux.HandleFunc("POST /api/v1/simulation/trade", h.HandleSimulationTrade)
+	mux.HandleFunc("POST /api/v1/simulation/reset", h.HandleSimulationReset)
 
 	// Serve static files from frontend/dist for SPA
 	distDir := "./frontend/dist"

@@ -575,3 +575,337 @@ func TestHandlePlaidExchange_PlaidError(t *testing.T) {
 		`{"slot":"principal","publicToken":"public-sandbox-xyz"}`)
 	assertStatus(t, w, http.StatusInternalServerError)
 }
+
+// ── Mock SimulationManager ────────────────────────────────────────────────────
+
+type mockSimulation struct {
+	account     models.SimulationAccount
+	summaryErr  error
+	tradeErr    error
+	snapshotErr error
+	resetErr    error
+}
+
+func (m *mockSimulation) Summary() (models.SimulationAccount, error) {
+	return m.account, m.summaryErr
+}
+func (m *mockSimulation) Trade(action, ticker string, shares, price float64) error {
+	return m.tradeErr
+}
+func (m *mockSimulation) AddSnapshot(totalValue float64) error {
+	return m.snapshotErr
+}
+func (m *mockSimulation) Reset() error {
+	return m.resetErr
+}
+
+// ── Mock Quoter ───────────────────────────────────────────────────────────────
+
+type mockQuoter struct {
+	quote    models.QuoteResponse
+	quoteErr error
+}
+
+func (m *mockQuoter) FetchQuote(_ string) (models.QuoteResponse, error) {
+	return m.quote, m.quoteErr
+}
+
+// ── Simulation handlers ───────────────────────────────────────────────────────
+
+func newSimHandler(t *testing.T, sim SimulationManager, quoter Quoter) *Handler {
+	t.Helper()
+	h, err := New(Config{Store: &mockStore{}, Simulation: sim, Quoter: quoter})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	return h
+}
+
+func TestHandleSimulation_NoSimStore(t *testing.T) {
+	h := newSimHandler(t, nil, nil)
+	w := doRequest(h.HandleSimulation, http.MethodGet, "/api/v1/simulation", "")
+	assertStatus(t, w, http.StatusOK)
+	var data models.SimulationSummaryResponse
+	decodeData(t, w, &data)
+	if data.CashBalance != 100_000 {
+		t.Errorf("CashBalance = %v, want 100000", data.CashBalance)
+	}
+}
+
+func TestHandleSimulation_Success(t *testing.T) {
+	sim := &mockSimulation{
+		account: models.SimulationAccount{
+			CashBalance:  90_000,
+			StartingCash: 100_000,
+			Positions: []models.SimulationPosition{
+				{Ticker: "NVDA", Shares: 10, AvgCost: 100},
+			},
+			Transactions: []models.SimulationTx{},
+			Snapshots:    []models.PortfolioSnapshot{},
+		},
+	}
+	quoter := &mockQuoter{quote: models.QuoteResponse{Ticker: "NVDA", Price: 120}}
+	h := newSimHandler(t, sim, quoter)
+	w := doRequest(h.HandleSimulation, http.MethodGet, "/api/v1/simulation", "")
+
+	assertStatus(t, w, http.StatusOK)
+	var data models.SimulationSummaryResponse
+	decodeData(t, w, &data)
+	if data.CashBalance != 90_000 {
+		t.Errorf("CashBalance = %v, want 90000", data.CashBalance)
+	}
+	if len(data.Positions) != 1 {
+		t.Fatalf("positions len = %d, want 1", len(data.Positions))
+	}
+	if data.Positions[0].CurrentPrice != 120 {
+		t.Errorf("CurrentPrice = %v, want 120", data.Positions[0].CurrentPrice)
+	}
+	if data.Positions[0].GainDir != "up" {
+		t.Errorf("GainDir = %q, want up", data.Positions[0].GainDir)
+	}
+}
+
+func TestHandleSimulation_SummaryError(t *testing.T) {
+	sim := &mockSimulation{summaryErr: errors.New("disk error")}
+	h := newSimHandler(t, sim, nil)
+	w := doRequest(h.HandleSimulation, http.MethodGet, "/api/v1/simulation", "")
+	assertStatus(t, w, http.StatusInternalServerError)
+}
+
+func TestHandleSimulationQuote_MissingTicker(t *testing.T) {
+	h := newSimHandler(t, nil, &mockQuoter{})
+	w := doRequest(h.HandleSimulationQuote, http.MethodGet, "/api/v1/simulation/quote", "")
+	assertStatus(t, w, http.StatusBadRequest)
+}
+
+func TestHandleSimulationQuote_NoQuoter(t *testing.T) {
+	h := newSimHandler(t, nil, nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/simulation/quote?ticker=NVDA", nil)
+	w := httptest.NewRecorder()
+	h.HandleSimulationQuote(w, req)
+	assertStatus(t, w, http.StatusServiceUnavailable)
+}
+
+func TestHandleSimulationQuote_Success(t *testing.T) {
+	quoter := &mockQuoter{quote: models.QuoteResponse{Ticker: "NVDA", Price: 135.50, Dir: "up"}}
+	h := newSimHandler(t, nil, quoter)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/simulation/quote?ticker=NVDA", nil)
+	w := httptest.NewRecorder()
+	h.HandleSimulationQuote(w, req)
+
+	assertStatus(t, w, http.StatusOK)
+	var data models.QuoteResponse
+	decodeData(t, w, &data)
+	if data.Price != 135.50 {
+		t.Errorf("Price = %v, want 135.50", data.Price)
+	}
+}
+
+func TestHandleSimulationTrade_NoSimStore(t *testing.T) {
+	h := newSimHandler(t, nil, &mockQuoter{})
+	w := doRequest(h.HandleSimulationTrade, http.MethodPost, "/api/v1/simulation/trade",
+		`{"ticker":"NVDA","action":"buy","shares":5}`)
+	assertStatus(t, w, http.StatusServiceUnavailable)
+}
+
+func TestHandleSimulationTrade_InvalidBody(t *testing.T) {
+	h := newSimHandler(t, &mockSimulation{}, &mockQuoter{})
+	w := doRequest(h.HandleSimulationTrade, http.MethodPost, "/api/v1/simulation/trade", `not json`)
+	assertStatus(t, w, http.StatusBadRequest)
+}
+
+func TestHandleSimulationTrade_BadRequest(t *testing.T) {
+	tests := []struct{ name, body string }{
+		{"missing ticker", `{"action":"buy","shares":5}`},
+		{"zero shares", `{"ticker":"NVDA","action":"buy","shares":0}`},
+		{"invalid action", `{"ticker":"NVDA","action":"hold","shares":5}`},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			h := newSimHandler(t, &mockSimulation{}, &mockQuoter{quote: models.QuoteResponse{Price: 100}})
+			w := doRequest(h.HandleSimulationTrade, http.MethodPost, "/api/v1/simulation/trade", tc.body)
+			assertStatus(t, w, http.StatusBadRequest)
+		})
+	}
+}
+
+func TestHandleSimulationTrade_Success(t *testing.T) {
+	sim := &mockSimulation{
+		account: models.SimulationAccount{CashBalance: 95_000, StartingCash: 100_000},
+	}
+	quoter := &mockQuoter{quote: models.QuoteResponse{Price: 100}}
+	h := newSimHandler(t, sim, quoter)
+	w := doRequest(h.HandleSimulationTrade, http.MethodPost, "/api/v1/simulation/trade",
+		`{"ticker":"NVDA","action":"buy","shares":5}`)
+
+	assertStatus(t, w, http.StatusOK)
+	var data models.TradeResponse
+	decodeData(t, w, &data)
+	if !data.Success {
+		t.Error("expected success = true")
+	}
+	if data.Price != 100 {
+		t.Errorf("Price = %v, want 100", data.Price)
+	}
+}
+
+func TestHandleSimulationTrade_TradeFailed(t *testing.T) {
+	sim := &mockSimulation{tradeErr: errors.New("insufficient funds")}
+	quoter := &mockQuoter{quote: models.QuoteResponse{Price: 100}}
+	h := newSimHandler(t, sim, quoter)
+	w := doRequest(h.HandleSimulationTrade, http.MethodPost, "/api/v1/simulation/trade",
+		`{"ticker":"NVDA","action":"buy","shares":5000}`)
+	assertStatus(t, w, http.StatusBadRequest)
+}
+
+func TestHandleSimulationReset_NoSimStore(t *testing.T) {
+	h := newSimHandler(t, nil, nil)
+	w := doRequest(h.HandleSimulationReset, http.MethodPost, "/api/v1/simulation/reset", "")
+	assertStatus(t, w, http.StatusOK)
+}
+
+func TestHandleSimulationReset_Success(t *testing.T) {
+	h := newSimHandler(t, &mockSimulation{}, nil)
+	w := doRequest(h.HandleSimulationReset, http.MethodPost, "/api/v1/simulation/reset", "")
+	assertStatus(t, w, http.StatusOK)
+	var data struct {
+		Success bool `json:"success"`
+	}
+	decodeData(t, w, &data)
+	if !data.Success {
+		t.Error("expected success = true")
+	}
+}
+
+func TestHandleSimulationReset_Error(t *testing.T) {
+	sim := &mockSimulation{resetErr: errors.New("disk full")}
+	h := newSimHandler(t, sim, nil)
+	w := doRequest(h.HandleSimulationReset, http.MethodPost, "/api/v1/simulation/reset", "")
+	assertStatus(t, w, http.StatusInternalServerError)
+}
+
+// ── simGainDir ────────────────────────────────────────────────────────────────
+
+func TestSimGainDir(t *testing.T) {
+	cases := []struct {
+		gain float64
+		want string
+	}{
+		{100, "up"},
+		{0.001, "up"},
+		{-100, "down"},
+		{-0.001, "down"},
+		{0, "flat"},
+	}
+	for _, tc := range cases {
+		got := simGainDir(tc.gain)
+		if got != tc.want {
+			t.Errorf("simGainDir(%v) = %q, want %q", tc.gain, got, tc.want)
+		}
+	}
+}
+
+// ── HandleSimulation – flat gain dir ─────────────────────────────────────────
+
+func TestHandleSimulation_FlatGain(t *testing.T) {
+	sim := &mockSimulation{
+		account: models.SimulationAccount{
+			CashBalance:  100_000,
+			StartingCash: 100_000,
+			Positions: []models.SimulationPosition{
+				// avgCost == currentPrice → gain = 0 → "flat"
+				{Ticker: "VTI", Shares: 1, AvgCost: 200},
+			},
+			Transactions: []models.SimulationTx{},
+			Snapshots:    []models.PortfolioSnapshot{},
+		},
+	}
+	quoter := &mockQuoter{quote: models.QuoteResponse{Ticker: "VTI", Price: 200}}
+	h := newSimHandler(t, sim, quoter)
+	w := doRequest(h.HandleSimulation, http.MethodGet, "/api/v1/simulation", "")
+
+	assertStatus(t, w, http.StatusOK)
+	var data models.SimulationSummaryResponse
+	decodeData(t, w, &data)
+	if len(data.Positions) != 1 || data.Positions[0].GainDir != "flat" {
+		t.Errorf("GainDir = %q, want flat", data.Positions[0].GainDir)
+	}
+}
+
+// ── HandleSimulation – quoter error falls back to avgCost ────────────────────
+
+func TestHandleSimulation_QuoterErrorFallback(t *testing.T) {
+	sim := &mockSimulation{
+		account: models.SimulationAccount{
+			CashBalance:  90_000,
+			StartingCash: 100_000,
+			Positions: []models.SimulationPosition{
+				{Ticker: "NVDA", Shares: 10, AvgCost: 1000},
+			},
+			Transactions: []models.SimulationTx{},
+			Snapshots:    []models.PortfolioSnapshot{},
+		},
+	}
+	quoter := &mockQuoter{quoteErr: errors.New("api down")}
+	h := newSimHandler(t, sim, quoter)
+	w := doRequest(h.HandleSimulation, http.MethodGet, "/api/v1/simulation", "")
+
+	assertStatus(t, w, http.StatusOK)
+	var data models.SimulationSummaryResponse
+	decodeData(t, w, &data)
+	// CurrentPrice should fall back to AvgCost
+	if data.Positions[0].CurrentPrice != 1000 {
+		t.Errorf("CurrentPrice = %v, want 1000 (fallback to avgCost)", data.Positions[0].CurrentPrice)
+	}
+}
+
+// ── HandleSimulationQuote – quoter error ──────────────────────────────────────
+
+func TestHandleSimulationQuote_QuoterError(t *testing.T) {
+	quoter := &mockQuoter{quoteErr: errors.New("ticker not found")}
+	h := newSimHandler(t, nil, quoter)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/simulation/quote?ticker=FAKE", nil)
+	w := httptest.NewRecorder()
+	h.HandleSimulationQuote(w, req)
+	assertStatus(t, w, http.StatusInternalServerError)
+}
+
+// ── HandleSimulationTrade – quoter error ──────────────────────────────────────
+
+func TestHandleSimulationTrade_QuoterError(t *testing.T) {
+	quoter := &mockQuoter{quoteErr: errors.New("market closed")}
+	h := newSimHandler(t, &mockSimulation{}, quoter)
+	w := doRequest(h.HandleSimulationTrade, http.MethodPost, "/api/v1/simulation/trade",
+		`{"ticker":"NVDA","action":"buy","shares":5}`)
+	assertStatus(t, w, http.StatusInternalServerError)
+}
+
+// ── HandleSimulation – with snapshots ─────────────────────────────────────────
+
+func TestHandleSimulation_WithSnapshots(t *testing.T) {
+	sim := &mockSimulation{
+		account: models.SimulationAccount{
+			CashBalance:  100_000,
+			StartingCash: 100_000,
+			Positions:    []models.SimulationPosition{},
+			Transactions: []models.SimulationTx{},
+			Snapshots: []models.PortfolioSnapshot{
+				{Date: "2026-01-01", Value: 100_000},
+				{Date: "2026-01-15", Value: 105_000},
+				{Date: "2026-02-01", Value: 110_000},
+			},
+		},
+	}
+	h := newSimHandler(t, sim, nil)
+	w := doRequest(h.HandleSimulation, http.MethodGet, "/api/v1/simulation", "")
+
+	assertStatus(t, w, http.StatusOK)
+	var data models.SimulationSummaryResponse
+	decodeData(t, w, &data)
+	if len(data.PerformanceData.Labels) != 3 {
+		t.Errorf("perf labels = %d, want 3", len(data.PerformanceData.Labels))
+	}
+	if data.PerformanceData.Labels[0] != "2026-01-01" {
+		t.Errorf("first label = %q, want 2026-01-01", data.PerformanceData.Labels[0])
+	}
+}

@@ -14,6 +14,7 @@ const Principal = lazy(() => import('./pages/Principal'))
 const MorganStanley = lazy(() => import('./pages/MorganStanley'))
 const Fidelity = lazy(() => import('./pages/Fidelity'))
 const SoFi = lazy(() => import('./pages/SoFi'))
+const Simulation = lazy(() => import('./pages/Simulation'))
 
 const TABS: Record<TabId, React.LazyExoticComponent<() => React.JSX.Element>> = {
   overview: Overview,
@@ -26,6 +27,7 @@ const TABS: Record<TabId, React.LazyExoticComponent<() => React.JSX.Element>> = 
   morganstanley: MorganStanley,
   fidelity: Fidelity,
   sofi: SoFi,
+  simulation: Simulation,
 }
 
 const App = () => {
