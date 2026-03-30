@@ -36,12 +36,15 @@ jobs:
 
       - name: Update coverage badge in README
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: tj-actions/coverage-badge-go@v3
-        with:
-          filename: backend/coverage.out
-          text: Go Coverage
-          green: 85
-          yellow: 60
+        run: |
+          PCT=$(go tool cover -func=coverage.out | tail -1 | awk '{print $3}' | sed 's/%//')
+          PCT_INT=$(printf "%.0f" "$PCT")
+          if [ "$PCT_INT" -ge 80 ]; then COLOR=brightgreen
+          elif [ "$PCT_INT" -ge 60 ]; then COLOR=yellow
+          else COLOR=red
+          fi
+          BADGE="![Go Coverage](https://img.shields.io/badge/Go%20Coverage-${PCT_INT}%25-${COLOR})"
+          sed -i "s|!\[Go Coverage\](https://img.shields.io/badge/Go.*)|${BADGE}|" ../README.md
 
       - name: Commit updated badge
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
