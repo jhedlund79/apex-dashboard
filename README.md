@@ -4,6 +4,7 @@
 A full-stack market intelligence dashboard for tracking US equities, international indices, crypto, sector analysis, and high-conviction investment recommendations.
 
 ![Go Coverage](https://img.shields.io/badge/Go%20Coverage-0%25-red)
+![Frontend Coverage](https://img.shields.io/badge/Frontend%20Coverage-0%25-red)
 
 ![APEX Dashboard](docs/screenshot.png)
 
@@ -80,6 +81,40 @@ npm run dev
 ```
 
 The Vite dev server proxies `/api/*` requests to `http://localhost:8080`, so no CORS configuration is needed during development.
+
+---
+
+## Testing
+
+### Backend
+
+```bash
+cd backend
+
+# Run all tests
+go test ./...
+
+# Run with race detector
+go test -race ./...
+
+# Run with coverage report
+go test -coverprofile=coverage.out ./internal/... && go tool cover -func=coverage.out
+```
+
+### Frontend
+
+```bash
+cd frontend
+
+# Run tests (watch mode)
+npm test
+
+# Run tests once
+npm run test:coverage
+
+# View coverage summary
+npm run test:coverage -- --reporter=text
+```
 
 ---
 
@@ -205,7 +240,8 @@ go build ./...
 
 # Frontend
 cd frontend
-npx tsc --noEmit   # type-check
+npm test -- --run   # all tests
+npx tsc --noEmit    # type-check
 npm run lint
 npm run build
 ```

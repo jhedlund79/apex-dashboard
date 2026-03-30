@@ -22,6 +22,8 @@ func (m *mockInner) Recommendations() (models.RecommendationsResponse, error) {
 }
 func (m *mockInner) Principal() (models.PortfolioResponse, error)     { return models.PortfolioResponse{}, nil }
 func (m *mockInner) MorganStanley() (models.PortfolioResponse, error) { return models.PortfolioResponse{}, nil }
+func (m *mockInner) Fidelity() (models.PortfolioResponse, error)      { return models.PortfolioResponse{}, nil }
+func (m *mockInner) SoFi() (models.PortfolioResponse, error)          { return models.PortfolioResponse{}, nil }
 
 // ── Store.New ────────────────────────────────────────────────────────────────
 

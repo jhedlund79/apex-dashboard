@@ -2,6 +2,147 @@ package live
 
 import "apex-dashboard/backend/internal/models"
 
+// Fidelity returns static seed data for the Fidelity brokerage account.
+// Update the values below with your actual account data.
+func (s *Store) Fidelity() (models.PortfolioResponse, error) {
+	return models.PortfolioResponse{
+		Connected: true,
+		Summary: models.PortfolioSummary{
+			AccountName:  "Individual Brokerage",
+			AccountType:  "Brokerage",
+			Provider:     "Fidelity",
+			CurrentValue: "$43,218.74",
+			TotalCost:    "$35,000.00",
+			TotalGain:    "+$8,218.74",
+			TotalGainPct: "+23.48%",
+			TotalGainDir: "up",
+			WeeklyChange: models.ChangeMetric{
+				Amount: "-$612.30",
+				Pct:    "-1.40%",
+				Dir:    "down",
+			},
+			MonthlyChange: models.ChangeMetric{
+				Amount: "-$1,840.50",
+				Pct:    "-4.08%",
+				Dir:    "down",
+			},
+			YTDChange: models.ChangeMetric{
+				Amount: "-$3,210.00",
+				Pct:    "-6.91%",
+				Dir:    "down",
+			},
+		},
+		PerformanceData: models.ChartData{
+			Labels: []string{
+				"Apr '24", "May '24", "Jun '24", "Jul '24", "Aug '24", "Sep '24",
+				"Oct '24", "Nov '24", "Dec '24", "Jan '25", "Feb '25", "Mar '25",
+			},
+			Data: []float64{
+				37200, 38100, 39400, 40800, 39600, 41200,
+				42100, 44600, 46428, 46100, 44900, 43218,
+			},
+		},
+		ContribData: models.ChartData{
+			Labels: []string{
+				"Apr '24", "May '24", "Jun '24", "Jul '24", "Aug '24", "Sep '24",
+				"Oct '24", "Nov '24", "Dec '24", "Jan '25", "Feb '25", "Mar '25",
+			},
+			Data: []float64{
+				0, 0, 0, 0, 0, 0,
+				0, 0, 0, 5000, 0, 0,
+			},
+		},
+		Holdings: []models.PortfolioHolding{
+			{Ticker: "FSKAX", Name: "Fidelity Total Market Index", Value: "$13,829.99", Allocation: "32.0%", Gain: "+$2,829.99", GainDir: "up"},
+			{Ticker: "FXAIX", Name: "Fidelity 500 Index Fund", Value: "$10,804.69", Allocation: "25.0%", Gain: "+$2,304.69", GainDir: "up"},
+			{Ticker: "FTIHX", Name: "Fidelity Total Intl Index", Value: "$6,482.81", Allocation: "15.0%", Gain: "+$982.81", GainDir: "up"},
+			{Ticker: "NVDA", Name: "NVIDIA Corporation", Value: "$5,186.25", Allocation: "12.0%", Gain: "+$2,686.25", GainDir: "up"},
+			{Ticker: "AAPL", Name: "Apple Inc.", Value: "$3,457.50", Allocation: "8.0%", Gain: "+$457.50", GainDir: "up"},
+			{Ticker: "FZROX", Name: "Fidelity ZERO Total Market", Value: "$2,160.94", Allocation: "5.0%", Gain: "+$160.94", GainDir: "up"},
+			{Ticker: "FBTC", Name: "Fidelity Wise Origin Bitcoin", Value: "$1,296.56", Allocation: "3.0%", Gain: "-$203.44", GainDir: "down"},
+		},
+		Contributions: []models.Contribution{
+			{Date: "Jan 2, 2025", Amount: "$5,000.00", Type: "deposit", Note: "Annual contribution"},
+			{Date: "Jan 3, 2024", Amount: "$5,000.00", Type: "deposit", Note: "Annual contribution"},
+			{Date: "Jan 4, 2023", Amount: "$5,000.00", Type: "deposit", Note: "Annual contribution"},
+			{Date: "Jan 5, 2022", Amount: "$5,000.00", Type: "deposit", Note: "Annual contribution"},
+			{Date: "Jun 15, 2022", Amount: "$5,000.00", Type: "deposit", Note: "Mid-year addition"},
+			{Date: "Jun 10, 2023", Amount: "$5,000.00", Type: "deposit", Note: "Mid-year addition"},
+			{Date: "Jul 1, 2024", Amount: "$5,000.00", Type: "deposit", Note: "Mid-year addition"},
+		},
+	}, nil
+}
+
+// SoFi returns static seed data for the SoFi Invest brokerage account.
+// Update the values below with your actual account data.
+func (s *Store) SoFi() (models.PortfolioResponse, error) {
+	return models.PortfolioResponse{
+		Connected: true,
+		Summary: models.PortfolioSummary{
+			AccountName:  "Active Invest",
+			AccountType:  "Brokerage",
+			Provider:     "SoFi",
+			CurrentValue: "$8,142.60",
+			TotalCost:    "$7,500.00",
+			TotalGain:    "+$642.60",
+			TotalGainPct: "+8.57%",
+			TotalGainDir: "up",
+			WeeklyChange: models.ChangeMetric{
+				Amount: "-$184.20",
+				Pct:    "-2.21%",
+				Dir:    "down",
+			},
+			MonthlyChange: models.ChangeMetric{
+				Amount: "-$390.80",
+				Pct:    "-4.58%",
+				Dir:    "down",
+			},
+			YTDChange: models.ChangeMetric{
+				Amount: "-$607.40",
+				Pct:    "-6.94%",
+				Dir:    "down",
+			},
+		},
+		PerformanceData: models.ChartData{
+			Labels: []string{
+				"Apr '24", "May '24", "Jun '24", "Jul '24", "Aug '24", "Sep '24",
+				"Oct '24", "Nov '24", "Dec '24", "Jan '25", "Feb '25", "Mar '25",
+			},
+			Data: []float64{
+				6800, 7050, 7280, 7540, 7310, 7620,
+				7880, 8410, 8750, 8720, 8430, 8142,
+			},
+		},
+		ContribData: models.ChartData{
+			Labels: []string{
+				"Apr '24", "May '24", "Jun '24", "Jul '24", "Aug '24", "Sep '24",
+				"Oct '24", "Nov '24", "Dec '24", "Jan '25", "Feb '25", "Mar '25",
+			},
+			Data: []float64{
+				250, 250, 250, 250, 250, 250,
+				250, 250, 250, 250, 250, 250,
+			},
+		},
+		Holdings: []models.PortfolioHolding{
+			{Ticker: "VTI", Name: "Vanguard Total Stock Market ETF", Value: "$2,442.78", Allocation: "30.0%", Gain: "+$192.78", GainDir: "up"},
+			{Ticker: "QQQ", Name: "Invesco QQQ Trust", Value: "$1,628.52", Allocation: "20.0%", Gain: "+$128.52", GainDir: "up"},
+			{Ticker: "PLTR", Name: "Palantir Technologies", Value: "$1,221.39", Allocation: "15.0%", Gain: "+$471.39", GainDir: "up"},
+			{Ticker: "ARKK", Name: "ARK Innovation ETF", Value: "$814.26", Allocation: "10.0%", Gain: "-$185.74", GainDir: "down"},
+			{Ticker: "SOFI", Name: "SoFi Technologies Inc.", Value: "$814.26", Allocation: "10.0%", Gain: "-$85.74", GainDir: "down"},
+			{Ticker: "IONQ", Name: "IonQ Inc.", Value: "$610.70", Allocation: "7.5%", Gain: "+$110.70", GainDir: "up"},
+			{Ticker: "RKLB", Name: "Rocket Lab USA", Value: "$610.69", Allocation: "7.5%", Gain: "+$10.69", GainDir: "up"},
+		},
+		Contributions: []models.Contribution{
+			{Date: "Mar 1, 2025", Amount: "$250.00", Type: "deposit", Note: "Monthly auto-invest"},
+			{Date: "Feb 1, 2025", Amount: "$250.00", Type: "deposit", Note: "Monthly auto-invest"},
+			{Date: "Jan 1, 2025", Amount: "$250.00", Type: "deposit", Note: "Monthly auto-invest"},
+			{Date: "Dec 1, 2024", Amount: "$250.00", Type: "deposit", Note: "Monthly auto-invest"},
+			{Date: "Nov 1, 2024", Amount: "$250.00", Type: "deposit", Note: "Monthly auto-invest"},
+			{Date: "Oct 1, 2024", Amount: "$250.00", Type: "deposit", Note: "Monthly auto-invest"},
+		},
+	}, nil
+}
+
 // Principal returns static seed data for the Principal.com 401(k) account.
 // Update the values below with your actual account data.
 func (s *Store) Principal() (models.PortfolioResponse, error) {

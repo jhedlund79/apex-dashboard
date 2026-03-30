@@ -9,6 +9,8 @@ const navItems = [
   { id: 'sectors', icon: '◧', label: 'Sector Analysis', section: 'Strategy' },
   { id: 'principal', icon: '◎', label: 'Principal 401(k)', section: 'Portfolio' },
   { id: 'morganstanley', icon: '◈', label: 'Morgan Stanley', section: 'Portfolio' },
+  { id: 'fidelity', icon: '◆', label: 'Fidelity', section: 'Portfolio' },
+  { id: 'sofi', icon: '◇', label: 'SoFi Invest', section: 'Portfolio' },
 ] as const
 
 export type TabId = (typeof navItems)[number]['id']

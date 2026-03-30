@@ -24,6 +24,8 @@ import (
 const (
 	SlotPrincipal     = "principal"
 	SlotMorganStanley = "morganstanley"
+	SlotFidelity      = "fidelity"
+	SlotSoFi          = "sofi"
 )
 
 // Config holds construction parameters for the Plaid store.
@@ -88,6 +90,14 @@ func (s *Store) Principal() (models.PortfolioResponse, error) {
 
 func (s *Store) MorganStanley() (models.PortfolioResponse, error) {
 	return s.portfolioForSlot(SlotMorganStanley)
+}
+
+func (s *Store) Fidelity() (models.PortfolioResponse, error) {
+	return s.portfolioForSlot(SlotFidelity)
+}
+
+func (s *Store) SoFi() (models.PortfolioResponse, error) {
+	return s.portfolioForSlot(SlotSoFi)
 }
 
 func (s *Store) portfolioForSlot(slot string) (models.PortfolioResponse, error) {

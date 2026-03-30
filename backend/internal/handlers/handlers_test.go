@@ -28,6 +28,10 @@ type mockStore struct {
 	principalErr      error
 	morganStanleyResp models.PortfolioResponse
 	morganStanleyErr  error
+	fidelityResp      models.PortfolioResponse
+	fidelityErr       error
+	sofiResp          models.PortfolioResponse
+	sofiErr           error
 }
 
 func (m *mockStore) Overview() (models.OverviewResponse, error) {
@@ -47,6 +51,12 @@ func (m *mockStore) Principal() (models.PortfolioResponse, error) {
 }
 func (m *mockStore) MorganStanley() (models.PortfolioResponse, error) {
 	return m.morganStanleyResp, m.morganStanleyErr
+}
+func (m *mockStore) Fidelity() (models.PortfolioResponse, error) {
+	return m.fidelityResp, m.fidelityErr
+}
+func (m *mockStore) SoFi() (models.PortfolioResponse, error) {
+	return m.sofiResp, m.sofiErr
 }
 
 // ── Mock PlaidManager ────────────────────────────────────────────────────────
@@ -366,6 +376,60 @@ func TestHandleMorganStanley(t *testing.T) {
 	}
 }
 
+func TestHandleFidelity(t *testing.T) {
+	for _, tc := range commonCases {
+		t.Run(tc.name, func(t *testing.T) {
+			store := &mockStore{
+				fidelityResp: models.PortfolioResponse{
+					Connected: true,
+					Summary:   models.PortfolioSummary{CurrentValue: "$43k"},
+				},
+				fidelityErr: tc.storeErr,
+			}
+			h := newHandler(t, store, nil)
+			w := doRequest(h.HandleFidelity, http.MethodGet, "/api/v1/portfolio/fidelity", "")
+
+			assertStatus(t, w, tc.wantStatus)
+			assertJSON(t, w)
+
+			if tc.storeErr == nil {
+				var data models.PortfolioResponse
+				decodeData(t, w, &data)
+				if data.Summary.CurrentValue != "$43k" {
+					t.Errorf("CurrentValue = %q", data.Summary.CurrentValue)
+				}
+			}
+		})
+	}
+}
+
+func TestHandleSoFi(t *testing.T) {
+	for _, tc := range commonCases {
+		t.Run(tc.name, func(t *testing.T) {
+			store := &mockStore{
+				sofiResp: models.PortfolioResponse{
+					Connected: true,
+					Summary:   models.PortfolioSummary{CurrentValue: "$8k"},
+				},
+				sofiErr: tc.storeErr,
+			}
+			h := newHandler(t, store, nil)
+			w := doRequest(h.HandleSoFi, http.MethodGet, "/api/v1/portfolio/sofi", "")
+
+			assertStatus(t, w, tc.wantStatus)
+			assertJSON(t, w)
+
+			if tc.storeErr == nil {
+				var data models.PortfolioResponse
+				decodeData(t, w, &data)
+				if data.Summary.CurrentValue != "$8k" {
+					t.Errorf("CurrentValue = %q", data.Summary.CurrentValue)
+				}
+			}
+		})
+	}
+}
+
 // ── Plaid handlers ───────────────────────────────────────────────────────────
 
 func TestHandlePlaidStatus_PlaidNotConfigured(t *testing.T) {
@@ -377,18 +441,20 @@ func TestHandlePlaidStatus_PlaidNotConfigured(t *testing.T) {
 		Enabled       bool `json:"enabled"`
 		Principal     bool `json:"principal"`
 		Morganstanley bool `json:"morganstanley"`
+		Fidelity      bool `json:"fidelity"`
+		Sofi          bool `json:"sofi"`
 	}
 	decodeData(t, w, &data)
 	if data.Enabled {
 		t.Error("enabled should be false when Plaid is not configured")
 	}
-	if data.Principal || data.Morganstanley {
+	if data.Principal || data.Morganstanley || data.Fidelity || data.Sofi {
 		t.Error("slots should be false when Plaid is not configured")
 	}
 }
 
 func TestHandlePlaidStatus_WithConnectedSlots(t *testing.T) {
-	plaid := &mockPlaid{slots: []string{"principal"}}
+	plaid := &mockPlaid{slots: []string{"principal", "fidelity"}}
 	h := newHandler(t, &mockStore{}, plaid)
 	w := doRequest(h.HandlePlaidStatus, http.MethodGet, "/api/v1/plaid/status", "")
 
@@ -397,6 +463,8 @@ func TestHandlePlaidStatus_WithConnectedSlots(t *testing.T) {
 		Enabled       bool `json:"enabled"`
 		Principal     bool `json:"principal"`
 		Morganstanley bool `json:"morganstanley"`
+		Fidelity      bool `json:"fidelity"`
+		Sofi          bool `json:"sofi"`
 	}
 	decodeData(t, w, &data)
 	if !data.Enabled {
@@ -407,6 +475,12 @@ func TestHandlePlaidStatus_WithConnectedSlots(t *testing.T) {
 	}
 	if data.Morganstanley {
 		t.Error("morganstanley should be false")
+	}
+	if !data.Fidelity {
+		t.Error("fidelity should be true")
+	}
+	if data.Sofi {
+		t.Error("sofi should be false")
 	}
 }
 

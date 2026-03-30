@@ -185,4 +185,6 @@ export interface PlaidStatus {
   enabled: boolean
   principal: boolean
   morganstanley: boolean
+  fidelity: boolean
+  sofi: boolean
 }

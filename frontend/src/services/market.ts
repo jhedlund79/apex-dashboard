@@ -32,6 +32,8 @@ export const marketService = {
   recommendations: (): Promise<RecommendationsResponse> => apiFetch('/recommendations'),
   principal: (): Promise<PortfolioResponse> => apiFetch('/portfolio/principal'),
   morganStanley: (): Promise<PortfolioResponse> => apiFetch('/portfolio/morgan-stanley'),
+  fidelity: (): Promise<PortfolioResponse> => apiFetch('/portfolio/fidelity'),
+  soFi: (): Promise<PortfolioResponse> => apiFetch('/portfolio/sofi'),
 
   plaidStatus: (): Promise<PlaidStatus> => apiFetch('/plaid/status'),
   plaidLinkToken: (slot: string): Promise<{ linkToken: string }> =>

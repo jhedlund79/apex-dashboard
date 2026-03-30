@@ -81,6 +81,8 @@ func main() {
 	mux.HandleFunc("GET /api/v1/recommendations", h.HandleRecommendations)
 	mux.HandleFunc("GET /api/v1/portfolio/principal", h.HandlePrincipal)
 	mux.HandleFunc("GET /api/v1/portfolio/morgan-stanley", h.HandleMorganStanley)
+	mux.HandleFunc("GET /api/v1/portfolio/fidelity", h.HandleFidelity)
+	mux.HandleFunc("GET /api/v1/portfolio/sofi", h.HandleSoFi)
 	mux.HandleFunc("GET /api/v1/plaid/status", h.HandlePlaidStatus)
 	mux.HandleFunc("POST /api/v1/plaid/link-token", h.HandlePlaidLinkToken)
 	mux.HandleFunc("POST /api/v1/plaid/exchange", h.HandlePlaidExchange)

@@ -71,6 +71,12 @@ func (s *countingStore) MorganStanley() (models.PortfolioResponse, error) {
 	s.morganStanleyCalls++
 	return s.morganStanleyResp, s.morganStanleyErr
 }
+func (s *countingStore) Fidelity() (models.PortfolioResponse, error) {
+	return models.PortfolioResponse{}, nil
+}
+func (s *countingStore) SoFi() (models.PortfolioResponse, error) {
+	return models.PortfolioResponse{}, nil
+}
 
 func TestNew_ReturnsStore(t *testing.T) {
 	inner := &countingStore{}

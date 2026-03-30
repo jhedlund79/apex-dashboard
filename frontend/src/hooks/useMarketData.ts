@@ -51,3 +51,9 @@ export const usePrincipal = (): ApiState<PortfolioResponse> =>
 
 export const useMorganStanley = (): ApiState<PortfolioResponse> =>
   useApiCall(marketService.morganStanley)
+
+export const useFidelity = (): ApiState<PortfolioResponse> =>
+  useApiCall(marketService.fidelity)
+
+export const useSoFi = (): ApiState<PortfolioResponse> =>
+  useApiCall(marketService.soFi)

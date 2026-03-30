@@ -40,4 +40,10 @@ type Store interface {
 
 	// MorganStanley returns portfolio data for the Morgan Stanley investment account.
 	MorganStanley() (models.PortfolioResponse, error)
+
+	// Fidelity returns portfolio data for the Fidelity brokerage account.
+	Fidelity() (models.PortfolioResponse, error)
+
+	// SoFi returns portfolio data for the SoFi Invest brokerage account.
+	SoFi() (models.PortfolioResponse, error)
 }

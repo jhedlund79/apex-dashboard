@@ -38,6 +38,8 @@ type Store struct {
 	recs          entry[models.RecommendationsResponse]
 	principal     entry[models.PortfolioResponse]
 	morganStanley entry[models.PortfolioResponse]
+	fidelity      entry[models.PortfolioResponse]
+	sofi          entry[models.PortfolioResponse]
 }
 
 // New wraps inner with a cache that expires entries after ttl.
@@ -108,5 +110,27 @@ func (s *Store) MorganStanley() (models.PortfolioResponse, error) {
 	}
 	v, err := s.inner.MorganStanley()
 	s.morganStanley = entry[models.PortfolioResponse]{value: v, err: err, at: time.Now()}
+	return v, err
+}
+
+func (s *Store) Fidelity() (models.PortfolioResponse, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.fidelity.fresh(s.ttl) {
+		return s.fidelity.value, s.fidelity.err
+	}
+	v, err := s.inner.Fidelity()
+	s.fidelity = entry[models.PortfolioResponse]{value: v, err: err, at: time.Now()}
+	return v, err
+}
+
+func (s *Store) SoFi() (models.PortfolioResponse, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.sofi.fresh(s.ttl) {
+		return s.sofi.value, s.sofi.err
+	}
+	v, err := s.inner.SoFi()
+	s.sofi = entry[models.PortfolioResponse]{value: v, err: err, at: time.Now()}
 	return v, err
 }

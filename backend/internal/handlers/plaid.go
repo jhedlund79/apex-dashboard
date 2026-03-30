@@ -13,6 +13,8 @@ func (h *Handler) HandlePlaidStatus(w http.ResponseWriter, r *http.Request) {
 			"enabled":       false,
 			"principal":     false,
 			"morganstanley": false,
+			"fidelity":      false,
+			"sofi":          false,
 		})
 		return
 	}
@@ -25,6 +27,8 @@ func (h *Handler) HandlePlaidStatus(w http.ResponseWriter, r *http.Request) {
 		"enabled":       true,
 		"principal":     connected["principal"],
 		"morganstanley": connected["morganstanley"],
+		"fidelity":      connected["fidelity"],
+		"sofi":          connected["sofi"],
 	})
 }
 

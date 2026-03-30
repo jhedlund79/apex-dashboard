@@ -3,7 +3,7 @@ import { usePlaidLink } from 'react-plaid-link'
 import { marketService } from '../services/market'
 
 interface PlaidConnectProps {
-  slot: 'principal' | 'morganstanley'
+  slot: 'principal' | 'morganstanley' | 'fidelity' | 'sofi'
   institutionName: string
   onConnected: () => void
 }
