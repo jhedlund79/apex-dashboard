@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -85,5 +86,34 @@ func TestRun_ShutdownOnContextCancel(t *testing.T) {
 		}
 	case <-time.After(3 * time.Second):
 		t.Error("Run did not return after context cancel")
+	}
+}
+
+func TestRun_ReturnsErrorOnBadAddr(t *testing.T) {
+	// Occupy a port first so our server can't bind to it.
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("failed to open listener: %v", err)
+	}
+	defer ln.Close()
+	takenAddr := ln.Addr().String()
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	s, err := New(Config{Handler: handler, Addr: takenAddr})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	ctx := context.Background()
+	runErr := make(chan error, 1)
+	go func() { runErr <- s.Run(ctx) }()
+
+	select {
+	case err := <-runErr:
+		if err == nil {
+			t.Error("expected Run to return an error when port is already in use")
+		}
+	case <-time.After(3 * time.Second):
+		t.Error("Run did not return error in time")
 	}
 }
