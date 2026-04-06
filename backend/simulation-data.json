@@ -1,0 +1,12 @@
+{
+  "cashBalance": 100000,
+  "startingCash": 100000,
+  "positions": [],
+  "transactions": [],
+  "snapshots": [
+    {
+      "date": "2026-04-06",
+      "value": 100000
+    }
+  ]
+}
