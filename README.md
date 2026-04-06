@@ -4,7 +4,7 @@
 A full-stack market intelligence dashboard for tracking US equities, international indices, crypto, sector analysis, and high-conviction investment recommendations.
 
 ![Go Coverage](https://img.shields.io/badge/Go%20Coverage-92%25-brightgreen)
-![Frontend Coverage](https://img.shields.io/badge/Frontend%20Coverage-93%25-brightgreen)
+![Frontend Coverage](https://img.shields.io/badge/Frontend%20Coverage-94%25-brightgreen)
 
 ![APEX Dashboard](docs/screenshot.png)
 
